@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/AuthContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { motion } from 'motion/react';
 import { GraduationCap, BookOpen, Users, Video, ShieldCheck, ArrowRight } from 'lucide-react';
 
