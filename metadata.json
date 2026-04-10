@@ -1,0 +1,5 @@
+{
+  "name": "ACT",
+  "description": "An online learning platform with course creation, student progress tracking, and video conferencing capabilities.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

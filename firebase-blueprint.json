@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a student or admin in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "student"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Represents a course category offered on the platform.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnailUrl": { "type": "string", "format": "uri" },
+        "gmeetLink": { "type": "string", "format": "uri", "description": "Link for live classes" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A single video lesson within a course.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "youtubeLink": { "type": "string", "format": "uri" },
+        "order": { "type": "number", "description": "Display order of the lesson" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "youtubeLink", "order"]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "description": "Tracks a student's progress and payment for a course.",
+      "type": "object",
+      "properties": {
+        "studentUid": { "type": "string" },
+        "courseId": { "type": "string" },
+        "progress": { "type": "number", "description": "Percentage of course completed" },
+        "paid": { "type": "boolean", "description": "Whether the student has paid for this specific course" },
+        "enrolledAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentUid", "courseId", "progress", "paid"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Storage for user profiles."
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Storage for course details."
+    },
+    "/courses/{courseId}/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Storage for lessons within a course."
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": "Enrollment",
+      "description": "Storage for student course enrollments and progress."
+    }
+  }
+}

@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string
+    //   - role: string (required, 'admin' | 'student')
+    //   - createdAt: timestamp
+    //
+    // Collection: courses
+    // Document ID: {courseId}
+    // Fields:
+    //   - title: string (required)
+    //   - description: string (required)
+    //   - thumbnailUrl: string
+    //   - gmeetLink: string
+    //   - createdAt: timestamp
+    //
+    // Collection: courses/{courseId}/lessons
+    // Document ID: {lessonId}
+    // Fields:
+    //   - title: string (required)
+    //   - youtubeLink: string (required)
+    //   - order: number (required)
+    //   - createdAt: timestamp
+    //
+    // Collection: enrollments
+    // Document ID: {enrollmentId} (Recommended: studentUid + "_" + courseId)
+    // Fields:
+    //   - studentUid: string (required)
+    //   - courseId: string (required)
+    //   - progress: number (required)
+    //   - paid: bool (required)
+    //   - enrolledAt: timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "arnabmanna034@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isPaidForCourse(courseId) {
+      let enrollmentId = request.auth.uid + "_" + courseId;
+      return exists(/databases/$(database)/documents/enrollments/$(enrollmentId)) &&
+             get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.paid == true;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'student'];
+    }
+
+    function isValidCourse(data) {
+      return data.keys().hasAll(['title', 'description']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.description is string && data.description.size() < 5000;
+    }
+
+    function isValidLesson(data) {
+      return data.keys().hasAll(['title', 'youtubeLink', 'order']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.youtubeLink is string &&
+             data.order is number;
+    }
+
+    function isValidEnrollment(data) {
+      return data.keys().hasAll(['studentUid', 'courseId', 'progress', 'paid']) &&
+             data.studentUid is string &&
+             data.courseId is string &&
+             data.progress is number && data.progress >= 0 && data.progress <= 100 &&
+             data.paid is bool;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    (isOwner(userId) && request.resource.data.role == 'student' || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) &&
+                    (isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role));
+      allow delete: if isAdmin();
+    }
+
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidCourse(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /lessons/{lessonId} {
+        allow read: if isAdmin() || isPaidForCourse(courseId);
+        allow create, update: if isAdmin() && isValidLesson(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.studentUid || isAdmin());
+      allow create: if isAuthenticated() && isValidEnrollment(request.resource.data) && 
+                    (request.auth.uid == request.resource.data.studentUid && request.resource.data.paid == false || isAdmin());
+      allow update: if isAuthenticated() && isValidEnrollment(request.resource.data) &&
+                    (isAdmin() || (request.auth.uid == resource.data.studentUid && request.resource.data.paid == resource.data.paid));
+      allow delete: if isAdmin();
+    }
+  }
+}
