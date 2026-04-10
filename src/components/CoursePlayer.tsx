@@ -4,8 +4,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, collection, query, where, orderBy, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/Button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/Progress';
+import { Badge } from '@/components/ui/Badge';
 import { ArrowLeft, Video, CheckCircle, Play, BookOpen, ChevronRight, GraduationCap, Lock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
